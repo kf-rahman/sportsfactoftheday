@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block content %}
+  <div class="mt-10 bg-white shadow-sm rounded-xl p-6 space-y-4">
+    <h1 class="text-2xl font-semibold">Sports Facts</h1>
+
+    <label for="sport" class="block text-sm font-medium">Choose a sport</label>
+    <select id="sport" class="w-full border rounded-lg p-2">
+      <option value="nba">NBA</option>
+      <option value="mlb">MLB</option>
+      <option value="nhl">NHL</option>
+    </select>
+
+    <button id="generateBtn" class="w-full mt-2 rounded-lg p-3 bg-black text-white">
+      Generate Fact
+    </button>
+
+    <div id="factBox" class="min-h-[3rem] rounded-lg bg-gray-100 p-3 text-sm">
+      <!-- fact will appear here -->
+      <span class="text-gray-500">Click “Generate Fact” to see one.</span>
+    </div>
+
+    <hr class="my-4" />
+
+    <form id="signupForm" class="space-y-2">
+      <label class="block text-sm font-medium">Join the mailing list</label>
+      <input id="email" type="email" placeholder="you@example.com"
+             class="w-full border rounded-lg p-2" required />
+
+      <div class="flex items-center gap-3 text-sm">
+        <label class="flex items-center gap-2">
+          <input type="checkbox" value="nba" checked /> NBA
+        </label>
+        <label class="flex items-center gap-2">
+          <input type="checkbox" value="mlb" /> MLB
+        </label>
+        <label class="flex items-center gap-2">
+          <input type="checkbox" value="nhl" /> NHL
+        </label>
+      </div>
+
+      <button class="w-full rounded-lg p-3 bg-gray-900 text-white">
+        Sign Up
+      </button>
+    </form>
+  </div>
+
+  <script>
+    // Temporary stubs: we’ll wire real endpoints next step.
+    document.getElementById('generateBtn').addEventListener('click', () => {
+      const sport = document.getElementById('sport').value;
+      const box = document.getElementById('factBox');
+      box.textContent = `Generating a ${sport.toUpperCase()} fact… (API coming next)`;
+    });
+
+    document.getElementById('signupForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const email = document.getElementById('email').value;
+      const sports = [...document.querySelectorAll('#signupForm input[type=checkbox]:checked')].map(el => el.value);
+      alert(`Signing up ${email} for: ${sports.join(', ').toUpperCase()} (API coming next)`);
+    });
+  </script>
+{% endblock %}
