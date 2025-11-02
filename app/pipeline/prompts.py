@@ -36,3 +36,9 @@ def mock_fact(sport: str) -> str:
     template = random.choice(_TEMPLATES[sport])
     values = {k: random.choice(v) for k, v in _PLACEHOLDERS.items()}
     return template.format(**values)
+# keep existing code...
+
+def assemble_from_fields(fields: dict) -> str:
+    # very light composition in case you want to plug the LLM later
+    # for now we just return a string composed elsewhere (agents.render_one_sentence)
+    raise NotImplementedError  # not used now; reserved for LLM step

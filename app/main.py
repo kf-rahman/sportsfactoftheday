@@ -8,8 +8,11 @@ from app.pipeline.prompts import mock_fact
 from app.db import create_db_and_tables, engine
 from app.models import Subscriber
 from app.schemas import SubscribeIn, SubscribeOut
+# add these
+from app.pipeline.fetchers import fetch_mlb_sample
+from app.pipeline.agents import render_blurb
 
-# ...
+
 from app.deps import RateLimiter, RecentFactsCache
 
 app = FastAPI()
@@ -32,15 +35,48 @@ def index(request: Request):
 def healthcheck():
     return {"ok": True}
 
+# app/main.py (only the /api/generate route needs to change)
+from typing import Optional
+
+from typing import Optional
+# add to imports:
+# from app.pipeline.agents import render_one_sentence, render_blurb
+# from app.pipeline.fetchers import fetch_nba_sample, fetch_mlb_sample, fetch_nhl_sample
+# from app.pipeline.prompts import mock_fact
+# (and keep limiter, recent_cache, etc.)
+
+from typing import Optional
+from fastapi import HTTPException
+
+
 @app.get("/api/generate", response_class=JSONResponse)
-def generate_fact(request: Request, sport: str = Query("nba", pattern="^(nba|mlb|nhl)$")):
-    # rate limit
+async def generate_fact(
+    request: Request,
+    debug: Optional[int] = 0,
+):
     ip = request.client.host if request.client else "unknown"
     limiter.check(ip)
 
-    # no-repeat cache
-    fact = recent_cache.unique_generate(sport, lambda: mock_fact(sport), attempts=6)
-    return {"fact": fact}
+    try:
+        fields = await fetch_mlb_sample()
+        blurb = render_blurb(fields)
+
+        # avoid immediate duplicates
+        if blurb in recent_cache._set["mlb"]:
+            blurb = blurb + " "
+        recent_cache.remember("mlb", blurb)
+
+        payload = {"text": blurb, "source": "api"}
+        if debug:
+            payload["fields"] = fields
+        return payload
+
+    except Exception as e:
+        if debug:
+            return JSONResponse(status_code=502, content={"detail": "Failed to fetch MLB data", "error": str(e)})
+        raise HTTPException(status_code=502, detail="Failed to fetch MLB data")
+
+
 
 
 @app.post("/api/subscribe", response_model=SubscribeOut)

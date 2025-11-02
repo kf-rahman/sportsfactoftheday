@@ -3,3 +3,4 @@ uvicorn[standard]
 jinja2
 sqlmodel
 email-validator
+httpx
