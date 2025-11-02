@@ -45,18 +45,56 @@
   </div>
 
   <script>
-    // Temporary stubs: we’ll wire real endpoints next step.
-    document.getElementById('generateBtn').addEventListener('click', () => {
-      const sport = document.getElementById('sport').value;
-      const box = document.getElementById('factBox');
-      box.textContent = `Generating a ${sport.toUpperCase()} fact… (API coming next)`;
-    });
+  async function generateFact() {
+    const sport = document.getElementById('sport').value;
+    const box = document.getElementById('factBox');
+    box.textContent = `Generating a ${sport.toUpperCase()} fact…`;
+   try {
+  const res = await fetch(`/api/generate?sport=${encodeURIComponent(sport)}`);
+  const text = await res.text();
+  let data;
+  try { data = JSON.parse(text); } catch { data = {}; }
+  if (!res.ok) {
+    if (res.status === 429) throw new Error(data.detail || "Too many requests. Please wait a bit.");
+    throw new Error(data.detail || `HTTP ${res.status}`);
+  }
+  box.textContent = (data && data.fact) ? data.fact : "No fact returned.";
+} catch (err) {
+  box.textContent = err.message || "Sorry, couldn't generate a fact right now. Try again.";
+  console.error(err);
+}
+  }
 
-    document.getElementById('signupForm').addEventListener('submit', (e) => {
-      e.preventDefault();
-      const email = document.getElementById('email').value;
-      const sports = [...document.querySelectorAll('#signupForm input[type=checkbox]:checked')].map(el => el.value);
-      alert(`Signing up ${email} for: ${sports.join(', ').toUpperCase()} (API coming next)`);
-    });
-  </script>
+  async function signup(e) {
+    e.preventDefault();
+    const email = document.getElementById('email').value.trim();
+    const sports = [...document.querySelectorAll('#signupForm input[type=checkbox]:checked')].map(el => el.value);
+    const btn = e.submitter || document.querySelector('#signupForm button');
+
+    btn.disabled = true;
+    btn.textContent = "Signing up…";
+
+    try {
+      const res = await fetch("/api/subscribe", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ email, sports })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || "Signup failed");
+      alert(data.message || "Signed up!");
+      (document.getElementById('email')).value = "";
+    } catch (err) {
+      alert(err.message || "Could not sign up right now.");
+      console.error(err);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Sign Up";
+    }
+  }
+
+  document.getElementById('generateBtn').addEventListener('click', generateFact);
+  document.getElementById('signupForm').addEventListener('submit', signup);
+</script>
+
 {% endblock %}
