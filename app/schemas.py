@@ -1,5 +1,5 @@
-from pydantic import BaseModel, EmailStr, Field
 from typing import List, Literal
+from pydantic import BaseModel, EmailStr, Field
 
 Sport = Literal["nba", "mlb", "nhl"]
 
@@ -10,3 +10,4 @@ class SubscribeIn(BaseModel):
 class SubscribeOut(BaseModel):
     ok: bool
     message: str
+    email_sent: bool = False
