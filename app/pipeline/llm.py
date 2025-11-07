@@ -3,15 +3,14 @@ import os
 import json
 import requests
 from typing import Dict, Optional
-
 # ------------------------------------------------------------
 # CONFIG
 # ------------------------------------------------------------
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "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")
-MODEL = os.getenv("OPENROUTER_MODEL", "nvidia/nemotron-nano-12b-v2-vl:free")
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "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")
+MODEL = os.getenv("OPENROUTER_MODEL", "openrouter/polaris-alpha")
 SITE_URL = os.getenv("OPENROUTER_SITE_URL", "http://localhost:8000")
-APP_TITLE = os.getenv("OPENROUTER_APP_NAME", "SportsFacts-MVP")
+APP_TITLE = os.getenv("OPENROUTER_APP_NAME", "newtest")
 
 _cache: Dict[str, str] = {}
 
@@ -41,7 +40,7 @@ def _prompt_from_fields(fields: Dict) -> str:
         "You are a concise sports fact writer. "
         "Using ONLY the data below, write ONE short, factual MLB sentence about this team. "
         "Prefer venue, division, or league; include founding year if interesting. "
-        "Do NOT output anything except the sentence.\n\n"
+        "Do NOT output anything except the sentence. WRITE EVERYTHING IN CAPS\n\n"
         f"{context}"
     )
 
