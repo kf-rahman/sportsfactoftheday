@@ -4,6 +4,4 @@ jinja2
 sqlmodel
 email-validator
 httpx
-transformers
-sentencepiece
-torch
+nba_api

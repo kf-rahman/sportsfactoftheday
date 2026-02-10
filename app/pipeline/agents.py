@@ -24,77 +24,79 @@ def pretty_year(y: Optional[str]) -> Optional[str]:
     except ValueError:
         return None
 
-def render_one_sentence(fields: dict) -> str:
+def render_mlb_fact(fields: dict) -> str:
     """
-    Create a natural one-liner depending on available fields.
-    Priority: venue -> division/conference -> founding year -> league
+    Build a short, readable MLB fact from fields.
+    Tries to include venue/division/year/league when present.
     """
     team = normalize_name(fields.get("team_city"), fields.get("team_name"))
     sport = (fields.get("sport") or "").upper()
 
     venue = fields.get("venue")
     if venue:
-        return f"The {team} play home games at {venue} ({sport})."
-
-    division = clean_division(fields.get("division"))
-    conference = fields.get("conference")
-    if division and conference:
-        return f"The {team} compete in the {division} Division of the {conference} ({sport})."
-    if division:
-        return f"The {team} compete in the {division} Division ({sport})."
-    if conference:
-        return f"The {team} are in the {conference} ({sport})."
+        return f"⚾ The {team} have played at {venue} since their founding ({sport})."
 
     first_year = pretty_year(fields.get("first_year"))
     if first_year:
-        return f"The {team} were founded in {first_year} ({sport})."
+        return f"⚾ The {team} were founded in {first_year} and are one of MLB's historic franchises."
+
+    division = clean_division(fields.get("division"))
+    if division:
+        return f"⚾ The {team} compete in the {division} Division ({sport})."
 
     league = fields.get("league")
     if league:
-        return f"The {team} compete in {league} ({sport})."
+        return f"⚾ The {team} compete in {league} ({sport})."
 
-    # Fallback: just the team name
-    return f"{team} ({sport})."
-from typing import Optional
-# ... (existing functions)
+    return f"⚾ The {team} ({sport})."
+
+
+def render_nba_fact(fields: dict) -> str:
+    """
+    Build a short, readable NBA fact from fields.
+    Handles career leaders from real NBA API data.
+    """
+    fact_type = fields.get("fact_type")
+    player_name = fields.get("player_name", "an NBA player")
+    
+    if fact_type == "career_leader":
+        category = fields.get("category", "stats")
+        rank = fields.get("rank", 0)
+        value = fields.get("value", "")
+        active = fields.get("active", False)
+        
+        stat_names = {
+            "PTS": "points",
+            "REB": "rebounds", 
+            "AST": "assists",
+            "STL": "steals",
+            "BLK": "blocks",
+        }
+        stat_name = stat_names.get(category, category)
+        
+        active_text = " (still active)" if active else ""
+        
+        if rank == 1:
+            return f"🏀 {player_name} is the NBA's all-time leader in {stat_name} with {value} career {stat_name}{active_text}."
+        else:
+            return f"🏀 {player_name} ranks #{rank} in NBA history for career {stat_name} with {value} {stat_name}{active_text}."
+    
+    elif fact_type == "error":
+        return f"🏀 Unable to fetch NBA data at this moment. Please try again!"
+    
+    else:
+        return f"🏀 NBA - where amazing happens! Home to the world's greatest basketball players."
+
 
 def render_blurb(fields: dict) -> str:
     """
-    Build a short, readable blurb straight from fields (no LLM).
-    Tries to include venue/division/conference/year/league when present.
+    Build a fact based on sport type.
     """
-    team = normalize_name(fields.get("team_city"), fields.get("team_name"))
-    sport = (fields.get("sport") or "").upper()
-
-    bits = [f"{team} — {sport}"]
-
-    # compose from whatever we have
-    abbrev = fields.get("abbrev")
-    if abbrev:
-        bits.append(f"abbr {abbrev}")
-
-    venue = fields.get("venue")
-    if venue:
-        bits.append(f"venue: {venue}")
-
-    division = clean_division(fields.get("division"))
-    if division:
-        conf = fields.get("conference")
-        if conf:
-            bits.append(f"division: {division}, conference: {conf}")
-        else:
-            bits.append(f"division: {division}")
+    sport = fields.get("sport", "").lower()
+    
+    if sport == "nba":
+        return render_nba_fact(fields)
+    elif sport == "mlb":
+        return render_mlb_fact(fields)
     else:
-        conf = fields.get("conference")
-        if conf:
-            bits.append(f"conference: {conf}")
-
-    first_year = pretty_year(fields.get("first_year"))
-    if first_year:
-        bits.append(f"founded: {first_year}")
-
-    league = fields.get("league")
-    if league:
-        bits.append(f"league: {league}")
-
-    return " • ".join(bits)
+        return "Sports fact coming soon!"

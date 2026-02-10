@@ -1,72 +1,169 @@
 {% extends "base.html" %}
 {% block content %}
-  <div class="mt-10 bg-white shadow-sm rounded-xl p-6 space-y-4">
-    <h1 class="text-2xl font-semibold">Sports Facts</h1>
+  <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
+    <div class="w-full max-w-md px-6">
+      <!-- Main Card -->
+      <div class="bg-white shadow-2xl rounded-2xl p-8 text-center space-y-6">
+        <h1 class="text-3xl font-bold text-gray-800">Sports Facts</h1>
+        <p class="text-gray-500 text-sm">Your daily dose of MLB & NBA trivia</p>
 
-    <label for="sport" class="block text-sm font-medium">Choose a sport</label>
-    <select id="sport" class="w-full border rounded-lg p-2">
-      <option value="nba">NBA</option>
-      <option value="mlb">MLB</option>
-      <option value="nhl">NHL</option>
-    </select>
+        <!-- Sport Selector (Pills) -->
+        <div class="flex justify-center gap-2">
+          <button id="sport-random" class="sport-btn px-4 py-2 rounded-full bg-gray-800 text-white text-sm font-medium transition-all" onclick="selectSport('random')">
+            Random
+          </button>
+          <button id="sport-mlb" class="sport-btn px-4 py-2 rounded-full bg-gray-200 text-gray-700 text-sm font-medium transition-all hover:bg-gray-300" onclick="selectSport('mlb')">
+            MLB
+          </button>
+          <button id="sport-nba" class="sport-btn px-4 py-2 rounded-full bg-gray-200 text-gray-700 text-sm font-medium transition-all hover:bg-gray-300" onclick="selectSport('nba')">
+            NBA
+          </button>
+        </div>
 
-    <button id="generateBtn" class="w-full mt-2 rounded-lg p-3 bg-black text-white">
-      Generate Fact
-    </button>
+        <!-- Generate Button -->
+        <button id="generateBtn" class="w-full py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-semibold text-lg shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all active:scale-[0.98]">
+          Generate Fact
+        </button>
 
-    <div id="factBox" class="min-h-[3rem] rounded-lg bg-gray-100 p-3 text-sm">
-      <!-- fact will appear here -->
-      <span class="text-gray-500">Click “Generate Fact” to see one.</span>
-    </div>
+        <!-- Fact Display -->
+        <div id="factBox" class="min-h-[120px] rounded-xl bg-gray-50 p-6 text-gray-700 text-base leading-relaxed flex items-center justify-center">
+          <span class="text-gray-400">Click "Generate Fact" to see something amazing!</span>
+        </div>
 
-    <hr class="my-4" />
-
-    <form id="signupForm" class="space-y-2">
-      <label class="block text-sm font-medium">Join the mailing list</label>
-      <input id="email" type="email" placeholder="you@example.com"
-             class="w-full border rounded-lg p-2" required />
-
-      <div class="flex items-center gap-3 text-sm">
-        <label class="flex items-center gap-2">
-          <input type="checkbox" value="nba" checked /> NBA
-        </label>
-        <label class="flex items-center gap-2">
-          <input type="checkbox" value="mlb" /> MLB
-        </label>
-        <label class="flex items-center gap-2">
-          <input type="checkbox" value="nhl" /> NHL
-        </label>
+        <!-- Copy Button -->
+        <button id="copyBtn" class="hidden text-sm text-blue-600 hover:text-blue-800 font-medium" onclick="copyFact()">
+          Copy fact
+        </button>
       </div>
 
-      <button class="w-full rounded-lg p-3 bg-gray-900 text-white">
-        Sign Up
-      </button>
-    </form>
+      <!-- Email Signup Section -->
+      <div class="mt-6 bg-white shadow-lg rounded-2xl p-6">
+        <h2 class="text-lg font-semibold text-gray-800 mb-3">Get facts in your inbox</h2>
+        <form id="signupForm" class="space-y-3">
+          <input id="email" type="email" placeholder="you@example.com"
+                 class="w-full border border-gray-200 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+
+          <div class="flex items-center justify-center gap-4 text-sm text-gray-600">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" value="mlb" class="rounded" checked /> MLB
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" value="nba" class="rounded" checked /> NBA
+            </label>
+          </div>
+
+          <button type="submit" class="w-full py-3 bg-gray-800 text-white rounded-lg font-medium hover:bg-gray-900 transition-colors">
+            Sign Up
+          </button>
+        </form>
+        <p id="signupMessage" class="hidden mt-2 text-sm text-green-600 text-center"></p>
+      </div>
+    </div>
   </div>
 
   <script>
-  async function generateFact() {
-    const box = document.getElementById('factBox');
-    box.textContent = "Fetching MLB data…";
-    try {
-      const res = await fetch(`/api/generate?debug=1`); // debug=1 while developing
-      const text = await res.text();
-      let data; try { data = JSON.parse(text); } catch { data = {}; }
+    let selectedSport = 'random';
+    let currentFact = '';
 
-      if (!res.ok) throw new Error((data && data.detail) || `HTTP ${res.status}`);
-
-      box.textContent = data.text || "No data returned.";
-      if (data.fields) console.log("MLB fields:", data.fields);
-    } catch (err) {
-      box.textContent = err.message || "Could not fetch MLB data right now.";
-      console.error(err);
+    function selectSport(sport) {
+      selectedSport = sport;
+      
+      // Update button styles
+      document.querySelectorAll('.sport-btn').forEach(btn => {
+        btn.classList.remove('bg-gray-800', 'text-white');
+        btn.classList.add('bg-gray-200', 'text-gray-700');
+      });
+      
+      const activeBtn = document.getElementById('sport-' + sport);
+      activeBtn.classList.remove('bg-gray-200', 'text-gray-700');
+      activeBtn.classList.add('bg-gray-800', 'text-white');
     }
-  }
 
-  document.getElementById('generateBtn').addEventListener('click', generateFact);
+    async function generateFact() {
+      const box = document.getElementById('factBox');
+      const copyBtn = document.getElementById('copyBtn');
+      
+      box.innerHTML = '<span class="text-gray-400">Loading...</span>';
+      copyBtn.classList.add('hidden');
+      
+      try {
+        const sportParam = selectedSport === 'random' ? '' : `?sport=${selectedSport}`;
+        const res = await fetch(`/api/generate${sportParam}`);
+        const text = await res.text();
+        let data; try { data = JSON.parse(text); } catch { data = {}; }
 
-  // signup handler stays the same
-</script>
+        if (!res.ok) throw new Error((data && data.detail) || `HTTP ${res.status}`);
 
+        currentFact = data.text || "No data returned.";
+        box.textContent = currentFact;
+        copyBtn.classList.remove('hidden');
+        
+        // Analytics tracking
+        if (typeof gtag !== 'undefined') {
+          gtag('event', 'generate_fact', {
+            'sport': data.sport || selectedSport,
+            'llm_used': data.llm
+          });
+        }
+      } catch (err) {
+        box.textContent = "⚠️ " + (err.message || "Could not fetch data right now.");
+        copyBtn.classList.add('hidden');
+        console.error(err);
+      }
+    }
 
+    function copyFact() {
+      if (currentFact) {
+        navigator.clipboard.writeText(currentFact).then(() => {
+          const btn = document.getElementById('copyBtn');
+          btn.textContent = 'Copied!';
+          setTimeout(() => btn.textContent = 'Copy fact', 2000);
+        });
+      }
+    }
+
+    // Signup handler
+    document.getElementById('signupForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const email = document.getElementById('email').value;
+      const checkboxes = document.querySelectorAll('#signupForm input[type="checkbox"]:checked');
+      const sports = Array.from(checkboxes).map(cb => cb.value);
+      
+      try {
+        const res = await fetch('/api/subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, sports })
+        });
+        
+        const data = await res.json();
+        const msgEl = document.getElementById('signupMessage');
+        msgEl.textContent = data.message;
+        msgEl.classList.remove('hidden');
+        
+        if (data.ok) {
+          document.getElementById('email').value = '';
+          
+          // Analytics
+          if (typeof gtag !== 'undefined') {
+            gtag('event', 'signup', { 'sports': sports.join(',') });
+          }
+        }
+      } catch (err) {
+        console.error('Signup error:', err);
+      }
+    });
+
+    document.getElementById('generateBtn').addEventListener('click', generateFact);
+  </script>
+
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=GA_MEASUREMENT_ID"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'GA_MEASUREMENT_ID'); // Replace with your GA ID
+  </script>
 {% endblock %}

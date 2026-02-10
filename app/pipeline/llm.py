@@ -7,10 +7,10 @@ from typing import Dict, Optional
 # CONFIG
 # ------------------------------------------------------------
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "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")
-MODEL = os.getenv("OPENROUTER_MODEL", "openrouter/polaris-alpha")
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "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")
+MODEL = os.getenv("OPENROUTER_MODEL", "stepfun/step-3.5-flash:free")
 SITE_URL = os.getenv("OPENROUTER_SITE_URL", "http://localhost:8000")
-APP_TITLE = os.getenv("OPENROUTER_APP_NAME", "newtest")
+APP_TITLE = os.getenv("OPENROUTER_APP_NAME", "Sports Facts")
 
 _cache: Dict[str, str] = {}
 
@@ -18,6 +18,52 @@ _cache: Dict[str, str] = {}
 # BUILD PROMPT
 # ------------------------------------------------------------
 def _prompt_from_fields(fields: Dict) -> str:
+    sport = (fields.get("sport") or "").lower()
+    
+    if sport == "nba":
+        return _prompt_nba(fields)
+    elif sport == "mlb":
+        return _prompt_mlb(fields)
+    else:
+        return _prompt_generic(fields)
+
+
+def _prompt_nba(fields: Dict) -> str:
+    """Build prompt for NBA facts."""
+    fact_type = fields.get("fact_type", "")
+    player_name = fields.get("player_name", "")
+    category = fields.get("category", "")
+    rank = fields.get("rank", 0)
+    value = fields.get("value", "")
+    
+    stat_names = {
+        "PTS": "points",
+        "REB": "rebounds", 
+        "AST": "assists",
+        "STL": "steals",
+        "BLK": "blocks",
+    }
+    stat_name = stat_names.get(category, category)
+    
+    context = (
+        f"Sport: NBA\n"
+        f"Player: {player_name}\n"
+        f"Statistic: {stat_name}\n"
+        f"Rank: #{rank}\n"
+        f"Value: {value}\n"
+    )
+    
+    return (
+        "You are a concise sports fact writer. "
+        "Using ONLY the data below, write ONE short, engaging NBA fact about this player's achievement. "
+        "Make it interesting but factual. Keep it under 25 words. "
+        "Do NOT output anything except the fact sentence.\n\n"
+        f"{context}"
+    )
+
+
+def _prompt_mlb(fields: Dict) -> str:
+    """Build prompt for MLB facts."""
     team_city = (fields.get("team_city") or "").strip()
     team_name = (fields.get("team_name") or "").strip()
     venue = (fields.get("venue") or "").strip()
@@ -27,6 +73,7 @@ def _prompt_from_fields(fields: Dict) -> str:
     abbr = (fields.get("abbrev") or "").strip()
 
     context = (
+        f"Sport: MLB\n"
         f"City: {team_city}\n"
         f"Team: {team_name}\n"
         f"Abbrev: {abbr}\n"
@@ -40,15 +87,26 @@ def _prompt_from_fields(fields: Dict) -> str:
         "You are a concise sports fact writer. "
         "Using ONLY the data below, write ONE short, factual MLB sentence about this team. "
         "Prefer venue, division, or league; include founding year if interesting. "
-        "Do NOT output anything except the sentence. WRITE EVERYTHING IN CAPS\n\n"
+        "Keep it under 25 words. "
+        "Do NOT output anything except the sentence.\n\n"
         f"{context}"
+    )
+
+
+def _prompt_generic(fields: Dict) -> str:
+    """Generic prompt for any sport."""
+    return (
+        "You are a concise sports fact writer. "
+        "Write ONE short, interesting sports fact. "
+        "Keep it under 25 words. "
+        "Do NOT output anything except the sentence.\n"
     )
 
 # ------------------------------------------------------------
 # CALL OPENROUTER
 # ------------------------------------------------------------
 def compose_fact(fields: Dict) -> Optional[str]:
-    """Compose a one-sentence MLB fact using OpenRouter's chat completions API."""
+    """Compose a fact using OpenRouter's chat completions API."""
     if not OPENROUTER_API_KEY or OPENROUTER_API_KEY.startswith("PUT_YOUR_KEY"):
         return None
 
@@ -68,13 +126,11 @@ def compose_fact(fields: Dict) -> Optional[str]:
         "messages": [
             {
                 "role": "user",
-                "content": [
-                    {"type": "text", "text": prompt}
-                ],
+                "content": prompt
             }
         ],
-        "temperature": 0.4,
-        "max_tokens": 64,
+        "temperature": 0.7,
+        "max_tokens": 1000,  # High limit - model uses many tokens for reasoning before content
     }
 
     try:
