@@ -7,3 +7,4 @@ httpx
 nba_api
 resend
 apscheduler
+psycopg2-binary

@@ -1,7 +1,22 @@
+# app/db.py
+import os
 from datetime import datetime
 from typing import Optional
 
 from sqlmodel import SQLModel, Field, create_engine
+
+# --------------------------------------
+# Database Configuration
+# --------------------------------------
+
+# Use Railway's DATABASE_URL if available, otherwise fallback to SQLite
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./sports.db")
+
+# Railway PostgreSQL URLs start with postgres://, need to convert to postgresql://
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
+engine = create_engine(DATABASE_URL, echo=False)
 
 # --------------------------------------
 # Database model
@@ -15,13 +30,6 @@ class Subscriber(SQLModel, table=True):
     nhl: bool = Field(default=False)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
-
-# --------------------------------------
-# Database engine
-# --------------------------------------
-
-DATABASE_URL = "sqlite:///./sports.db"
-engine = create_engine(DATABASE_URL, echo=True)
 
 # --------------------------------------
 # Create tables on startup
