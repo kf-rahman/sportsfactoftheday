@@ -1,9 +1,8 @@
 # app/services/email_service.py
 import os
+import resend
 from typing import List, Optional
 from datetime import datetime
-from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Mail, Email, To, Content, HtmlContent
 from sqlmodel import Session, select
 from app.db import engine
 from app.models import Subscriber
@@ -12,19 +11,20 @@ from app.pipeline.llm import compose_fact
 from app.pipeline.agents import render_blurb
 
 # Configuration
-SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY", "")
-FROM_EMAIL = os.getenv("FROM_EMAIL", "facts@sportsfacts.app")
+RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
+FROM_EMAIL = os.getenv("FROM_EMAIL", "onboarding@resend.dev")
 FROM_NAME = os.getenv("FROM_NAME", "Sports Facts")
 
 class EmailService:
     def __init__(self):
-        self.sg = None
-        if SENDGRID_API_KEY and not SENDGRID_API_KEY.startswith("YOUR_"):
-            self.sg = SendGridAPIClient(SENDGRID_API_KEY)
+        self.is_configured_flag = False
+        if RESEND_API_KEY and not RESEND_API_KEY.startswith("re_") == False:
+            resend.api_key = RESEND_API_KEY
+            self.is_configured_flag = True
     
     def is_configured(self) -> bool:
-        """Check if SendGrid is properly configured."""
-        return self.sg is not None
+        """Check if Resend is properly configured."""
+        return self.is_configured_flag
     
     async def generate_daily_fact(self, sport: str = "random") -> dict:
         """Generate a fact for the daily email."""
@@ -176,27 +176,27 @@ class EmailService:
     async def send_email(self, to_email: str, fact: dict) -> bool:
         """Send a single email with the daily fact."""
         if not self.is_configured():
-            print(f"SendGrid not configured. Would send to {to_email}")
+            print(f"Resend not configured. Would send to {to_email}")
             print(f"Fact: {fact.get('text', '')}")
             return False
         
         try:
             html_content = self.create_email_html(fact, to_email)
             
-            message = Mail(
-                from_email=Email(FROM_EMAIL, FROM_NAME),
-                to_emails=To(to_email),
-                subject=f"🏆 Your Daily Sports Fact - {fact.get('sport', 'Sports').upper()}",
-                html_content=html_content
-            )
+            params = {
+                "from": FROM_EMAIL,
+                "to": to_email,
+                "subject": f"🏆 Your Daily Sports Fact - {fact.get('sport', 'Sports').upper()}",
+                "html": html_content
+            }
             
-            response = self.sg.send(message)
+            response = resend.Emails.send(params)
             
-            if response.status_code in [200, 201, 202]:
-                print(f"✅ Email sent successfully to {to_email}")
+            if response and 'id' in response:
+                print(f"✅ Email sent successfully to {to_email} (ID: {response['id']})")
                 return True
             else:
-                print(f"❌ Failed to send email to {to_email}: {response.status_code}")
+                print(f"❌ Failed to send email to {to_email}: {response}")
                 return False
                 
         except Exception as e:

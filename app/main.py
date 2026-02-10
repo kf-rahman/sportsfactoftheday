@@ -153,7 +153,7 @@ def email_status():
     return {
         "configured": email_service.is_configured(),
         "from_email": os.getenv("FROM_EMAIL", "not set"),
-        "has_sendgrid_key": bool(os.getenv("SENDGRID_API_KEY", ""))
+        "has_resend_key": bool(os.getenv("RESEND_API_KEY", ""))
     }
 
 
@@ -163,7 +163,7 @@ async def send_test_email(email: str, sport: str = "random"):
     if not email_service.is_configured():
         raise HTTPException(
             status_code=503, 
-            detail="Email service not configured. Set SENDGRID_API_KEY env variable."
+            detail="Email service not configured. Set RESEND_API_KEY env variable."
         )
     
     # Generate fact
@@ -196,7 +196,7 @@ async def send_daily_emails(
     if not email_service.is_configured():
         raise HTTPException(
             status_code=503, 
-            detail="Email service not configured. Set SENDGRID_API_KEY env variable."
+            detail="Email service not configured. Set RESEND_API_KEY env variable."
         )
     
     # Send emails
