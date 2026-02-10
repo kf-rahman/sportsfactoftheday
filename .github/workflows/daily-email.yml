@@ -1,0 +1,17 @@
+name: Daily Sports Facts Email
+
+on:
+  schedule:
+    # Run at 9:00 AM UTC every day
+    - cron: '0 9 * * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  send-daily-facts:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send daily facts to subscribers
+        run: |
+          curl -X POST \
+            "https://sports-facts-production.up.railway.app/api/email/send-daily?secret=${{ secrets.ADMIN_SECRET }}" \
+            -H "Content-Type: application/json"
