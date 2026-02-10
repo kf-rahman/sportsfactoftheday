@@ -7,7 +7,7 @@ from typing import Dict, Optional
 # CONFIG
 # ------------------------------------------------------------
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "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")
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
 MODEL = os.getenv("OPENROUTER_MODEL", "stepfun/step-3.5-flash:free")
 SITE_URL = os.getenv("OPENROUTER_SITE_URL", "http://localhost:8000")
 APP_TITLE = os.getenv("OPENROUTER_APP_NAME", "Sports Facts")
