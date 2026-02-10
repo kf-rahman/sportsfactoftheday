@@ -8,7 +8,15 @@
 - [ ] Implement design fixes
 - [ ] Test responsiveness on mobile/desktop
 
-### 2. Robust Testing & Understanding
+### 2. Database Hosting & Setup
+- [ ] Choose database hosting option (Railway PostgreSQL recommended)
+- [ ] Provision PostgreSQL database on Railway
+- [ ] Verify DATABASE_URL environment variable is set
+- [ ] Test database connection on production
+- [ ] Migrate existing data if needed
+- [ ] Document database backup strategy
+
+### 3. Robust Testing & Understanding
 - [ ] Test all API endpoints
   - [ ] GET /api/generate (MLB, NBA, Random)
   - [ ] POST /api/subscribe
@@ -20,18 +28,19 @@
 - [ ] Document how each component works
 - [ ] Check error handling
 
-### 3. Testing Email Sign Up
+### 4. Testing Email Sign Up
 - [ ] Test email subscription form submission
 - [ ] Verify email validation works
-- [ ] Check subscriber saved to database
+- [ ] Test database persistence (subscribers saved to PostgreSQL)
 - [ ] Test sport preferences (NBA, MLB, both)
 - [ ] Test duplicate email handling
 - [ ] Verify unsubscribe functionality
 - [ ] Test Resend email delivery
+- [ ] Test data persists after server restart
 
 ## Medium Priority
 
-### 4. Overall Clean Up
+### 5. Overall Clean Up
 - [ ] Remove any unused code
 - [ ] Clean up imports
 - [ ] Add comments where needed
