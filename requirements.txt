@@ -5,3 +5,5 @@ sqlmodel
 email-validator
 httpx
 nba_api
+sendgrid
+apscheduler

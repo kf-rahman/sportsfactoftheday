@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block content %}
+  <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
+    <div class="w-full max-w-md px-6">
+      <div class="bg-white shadow-2xl rounded-2xl p-8 text-center space-y-6">
+        <div class="text-6xl">😢</div>
+        <h1 class="text-2xl font-bold text-gray-800">Unsubscribe</h1>
+        <p class="text-gray-500">We're sad to see you go!</p>
+
+        <form id="unsubscribeForm" class="space-y-4">
+          <input id="email" type="email" value="{{ email }}" placeholder="you@example.com"
+                 class="w-full border border-gray-200 rounded-lg p-3 text-center focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+
+          <button type="submit" class="w-full py-3 bg-red-500 text-white rounded-lg font-medium hover:bg-red-600 transition-colors">
+            Unsubscribe
+          </button>
+        </form>
+
+        <p id="message" class="hidden text-sm"></p>
+
+        <div class="pt-4 border-t">
+          <a href="/" class="text-blue-600 hover:text-blue-800 text-sm">
+            ← Go back home
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('unsubscribeForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const email = document.getElementById('email').value;
+      const msgEl = document.getElementById('message');
+      
+      try {
+        const res = await fetch('/api/unsubscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        });
+        
+        const data = await res.json();
+        msgEl.textContent = data.message;
+        msgEl.classList.remove('hidden');
+        
+        if (data.success) {
+          msgEl.classList.add('text-green-600');
+          document.getElementById('unsubscribeForm').style.display = 'none';
+        } else {
+          msgEl.classList.add('text-red-600');
+        }
+      } catch (err) {
+        msgEl.textContent = 'Something went wrong. Please try again.';
+        msgEl.classList.remove('hidden');
+        msgEl.classList.add('text-red-600');
+      }
+    });
+  </script>
+{% endblock %}

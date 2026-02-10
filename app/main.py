@@ -17,6 +17,7 @@ from app.deps import RateLimiter, RecentFactsCache
 from app.pipeline.fetchers import fetch_sport_sample
 from app.pipeline.agents import render_blurb
 from app.pipeline.llm import compose_fact  # OpenRouter-backed compose
+from app.services.email_service import email_service
 
 app = FastAPI()
 templates = Jinja2Templates(directory="app/templates")
@@ -140,3 +141,96 @@ def list_sports():
             }
         ]
     }
+
+
+# ------------------------------------------------------------
+# EMAIL ENDPOINTS
+# ------------------------------------------------------------
+
+@app.get("/api/email/status")
+def email_status():
+    """Check if email service is configured."""
+    return {
+        "configured": email_service.is_configured(),
+        "from_email": os.getenv("FROM_EMAIL", "not set"),
+        "has_sendgrid_key": bool(os.getenv("SENDGRID_API_KEY", ""))
+    }
+
+
+@app.post("/api/email/send-test")
+async def send_test_email(email: str, sport: str = "random"):
+    """Send a test email to a specific address."""
+    if not email_service.is_configured():
+        raise HTTPException(
+            status_code=503, 
+            detail="Email service not configured. Set SENDGRID_API_KEY env variable."
+        )
+    
+    # Generate fact
+    fact = await email_service.generate_daily_fact(sport)
+    
+    # Send email
+    success = await email_service.send_email(email, fact)
+    
+    if success:
+        return {
+            "success": True,
+            "message": f"Test email sent to {email}",
+            "fact": fact
+        }
+    else:
+        raise HTTPException(status_code=500, detail="Failed to send email")
+
+
+@app.post("/api/email/send-daily")
+async def send_daily_emails(
+    sport: str = "random",
+    secret: Optional[str] = Query(None, description="Secret key for admin access")
+):
+    """Send daily emails to all subscribers. Protected by secret key."""
+    # Simple protection - in production use proper auth
+    admin_secret = os.getenv("ADMIN_SECRET", "dev-secret-123")
+    if secret != admin_secret:
+        raise HTTPException(status_code=403, detail="Invalid secret key")
+    
+    if not email_service.is_configured():
+        raise HTTPException(
+            status_code=503, 
+            detail="Email service not configured. Set SENDGRID_API_KEY env variable."
+        )
+    
+    # Send emails
+    result = await email_service.send_daily_emails(sport)
+    
+    return {
+        "success": True,
+        "total_subscribers": result["total"],
+        "sent": result["sent"],
+        "failed": result["failed"],
+        "fact_sent": result["fact"]
+    }
+
+
+@app.get("/unsubscribe")
+def unsubscribe_page(request: Request, email: Optional[str] = None):
+    """Show unsubscribe page."""
+    return templates.TemplateResponse("unsubscribe.html", {
+        "request": request, 
+        "email": email or ""
+    })
+
+
+@app.post("/api/unsubscribe")
+def unsubscribe(email: str):
+    """Unsubscribe an email from daily facts."""
+    with Session(engine) as session:
+        subscriber = session.exec(
+            select(Subscriber).where(Subscriber.email == email)
+        ).first()
+        
+        if subscriber:
+            session.delete(subscriber)
+            session.commit()
+            return {"success": True, "message": "You've been unsubscribed. Sorry to see you go!"}
+        else:
+            return {"success": False, "message": "Email not found in our list."}
