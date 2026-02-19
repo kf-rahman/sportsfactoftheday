@@ -3,12 +3,14 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Sports Facts</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <title>{% block title %}Sports Facts{% endblock %}</title>
+  {% block head %}{% endblock %}
 </head>
-<body class="min-h-screen bg-gray-50 text-gray-900">
-  <main class="max-w-md mx-auto p-4">
+<body>
+  {% block body %}
+  <main>
     {% block content %}{% endblock %}
   </main>
+  {% endblock %}
 </body>
 </html>

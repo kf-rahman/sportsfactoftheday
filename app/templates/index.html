@@ -1,169 +1,668 @@
 {% extends "base.html" %}
+{% block title %}Sports Facts · Glass Notebook{% endblock %}
+
+{% block head %}
+<style>
+  /* ===== Reset ===== */
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  /* ===== Background — warm cream dot paper ===== */
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background-color: #fbf3e8;
+    background-image: radial-gradient(circle at 12px 12px, #c4b9aa 1.3px, transparent 1.3px);
+    background-size: 24px 24px;
+    min-height: 100vh;
+    padding: 36px 20px 48px;
+    display: flex;
+    justify-content: center;
+    position: relative;
+  }
+
+  /* Secondary offset dot layer for texture depth */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background-image: radial-gradient(circle at 6px 18px, #b8ad9e 0.8px, transparent 0.8px);
+    background-size: 24px 24px;
+    opacity: 0.22;
+    z-index: 0;
+  }
+
+  /* Subtle paper grain overlay */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.025;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 250px 250px;
+    z-index: 1;
+  }
+
+  main { all: unset; display: block; }
+
+  /* ===== Layout ===== */
+  .container {
+    width: 100%;
+    max-width: 580px;
+    position: relative;
+    z-index: 2;
+  }
+
+  /* ===== Glass card base ===== */
+  /*
+   * Layered glass effect:
+   *   - backdrop-filter blur + saturate for frosted look
+   *   - asymmetric border: bright top/left (light catching), muted bottom/right (shadow)
+   *   - multi-layer box-shadow: ambient lift + inset specular at top + inset shadow at bottom
+   *   - ::before pseudo-element: a narrow specular highlight streak across the top edge
+   */
+  .glass {
+    background: rgba(255, 255, 255, 0.27);
+    backdrop-filter: blur(18px) saturate(165%);
+    -webkit-backdrop-filter: blur(18px) saturate(165%);
+    border: 1px solid rgba(255, 255, 255, 0.58);
+    border-bottom-color: rgba(190, 180, 168, 0.35);
+    border-right-color: rgba(190, 180, 168, 0.28);
+    box-shadow:
+      0 8px 32px rgba(0, 0, 0, 0.06),
+      0 2px 8px  rgba(0, 0, 0, 0.04),
+      inset 0  1px 0   rgba(255, 255, 255, 0.72),
+      inset 0 -1px 0   rgba(0, 0, 0, 0.04);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Specular highlight streak across top */
+  .glass::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 12%;
+    right: 12%;
+    height: 1px;
+    background: linear-gradient(90deg,
+      transparent,
+      rgba(255, 255, 255, 0.95) 30%,
+      rgba(255, 255, 255, 0.95) 70%,
+      transparent
+    );
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  /* ===== Header ===== */
+  .header {
+    text-align: center;
+    margin-bottom: 20px;
+    padding: 26px 32px 22px;
+    border-radius: 22px;
+  }
+
+  .header-eyebrow {
+    font-size: 10px;
+    font-weight: 700;
+    color: rgba(0, 0, 0, 0.38);
+    letter-spacing: 2.8px;
+    text-transform: uppercase;
+    margin-bottom: 7px;
+  }
+
+  .header-title {
+    font-size: 32px;
+    font-weight: 300;
+    color: #1a1a1a;
+    letter-spacing: -0.5px;
+    line-height: 1.1;
+  }
+
+  .header-title strong {
+    font-weight: 650;
+  }
+
+  .header-rule {
+    width: 32px;
+    height: 1px;
+    background: rgba(0, 0, 0, 0.15);
+    margin: 14px auto 0;
+  }
+
+  /* ===== Fact Card ===== */
+  .fact-card {
+    padding: 44px 40px 36px;
+    margin-bottom: 16px;
+    border-radius: 22px;
+    min-height: 190px;
+    display: flex;
+    align-items: center;
+  }
+
+  .fact-card-inner { width: 100%; }
+
+  .fact-sport-tag {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: rgba(0, 0, 0, 0.35);
+    margin-bottom: 14px;
+    min-height: 14px;
+  }
+
+  .fact-text {
+    font-size: 21px;
+    line-height: 1.48;
+    font-weight: 400;
+    color: #1a1a1a;
+  }
+
+  .fact-text.muted {
+    color: rgba(0, 0, 0, 0.3);
+    font-size: 15px;
+    font-style: italic;
+    font-weight: 300;
+  }
+
+  .fact-actions {
+    margin-top: 22px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .copy-btn {
+    font-size: 11px;
+    font-weight: 600;
+    color: rgba(0, 0, 0, 0.38);
+    background: rgba(255, 255, 255, 0.52);
+    border: 1px solid rgba(255, 255, 255, 0.65);
+    border-bottom-color: rgba(0, 0, 0, 0.08);
+    padding: 5px 16px;
+    border-radius: 30px;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    display: none;
+  }
+
+  .copy-btn:hover {
+    background: rgba(255, 255, 255, 0.75);
+    color: rgba(0, 0, 0, 0.6);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.07), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  }
+
+  /* ===== Sports Selector ===== */
+  .sports-panel {
+    padding: 15px 20px;
+    margin-bottom: 14px;
+    border-radius: 22px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .sports-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.8px;
+    text-transform: uppercase;
+    color: rgba(0, 0, 0, 0.3);
+    margin-right: 4px;
+    flex-shrink: 0;
+  }
+
+  .sport-pill {
+    padding: 7px 18px;
+    background: rgba(255, 255, 255, 0.42);
+    border: 1px solid rgba(255, 255, 255, 0.62);
+    border-bottom-color: rgba(0, 0, 0, 0.07);
+    border-right-color: rgba(0, 0, 0, 0.05);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: rgba(0, 0, 0, 0.5);
+    border-radius: 30px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    letter-spacing: 0.3px;
+  }
+
+  .sport-pill:hover {
+    background: rgba(255, 255, 255, 0.65);
+    color: rgba(0, 0, 0, 0.7);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.07), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  }
+
+  .sport-pill.active {
+    background: rgba(14, 14, 20, 0.82);
+    color: rgba(255, 255, 255, 0.9);
+    border-color: rgba(0, 0, 0, 0.5);
+    border-top-color: rgba(255, 255, 255, 0.08);
+    font-weight: 600;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  }
+
+  /* ===== Generate Button ===== */
+  /*
+   * Liquid glass inspired: dark frosted glass pill with a shimmer
+   * sweep animation on hover (::after element slides across)
+   */
+  .generate-btn {
+    width: 100%;
+    padding: 17px;
+    background: rgba(12, 12, 18, 0.8);
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    color: rgba(255, 255, 255, 0.88);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-top-color: rgba(255, 255, 255, 0.2);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-bottom: 20px;
+    transition: all 0.25s ease;
+    letter-spacing: 2px;
+    border-radius: 40px;
+    text-transform: uppercase;
+    box-shadow:
+      0 6px 24px rgba(0, 0, 0, 0.18),
+      0 2px 8px  rgba(0, 0, 0, 0.12),
+      inset 0  1px 0 rgba(255, 255, 255, 0.14),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.3);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Shimmer sweep on hover */
+  .generate-btn::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -80%;
+    width: 55%;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.09),
+      transparent
+    );
+    transition: left 0.6s ease;
+    pointer-events: none;
+  }
+
+  .generate-btn:hover {
+    background: rgba(12, 12, 18, 0.88);
+    transform: translateY(-2px);
+    box-shadow:
+      0 12px 32px rgba(0, 0, 0, 0.22),
+      0 4px 12px  rgba(0, 0, 0, 0.14),
+      inset 0  1px 0 rgba(255, 255, 255, 0.18),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.3);
+  }
+
+  .generate-btn:hover::after { left: 160%; }
+
+  .generate-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.16);
+  }
+
+  /* ===== Email Signup ===== */
+  .signup-card {
+    padding: 36px 36px 30px;
+    border-radius: 22px;
+    margin-bottom: 28px;
+  }
+
+  .signup-eyebrow {
+    font-size: 10px;
+    font-weight: 700;
+    color: rgba(0, 0, 0, 0.32);
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .signup-heading {
+    font-size: 19px;
+    font-weight: 400;
+    color: #1a1a1a;
+    margin-bottom: 4px;
+    line-height: 1.3;
+  }
+
+  .signup-sub {
+    font-size: 12px;
+    color: rgba(0, 0, 0, 0.38);
+    margin-bottom: 24px;
+    line-height: 1.55;
+  }
+
+  .email-input {
+    width: 100%;
+    padding: 13px 20px;
+    border: 1px solid rgba(255, 255, 255, 0.58);
+    border-bottom-color: rgba(0, 0, 0, 0.11);
+    border-right-color: rgba(0, 0, 0, 0.07);
+    margin-bottom: 10px;
+    font-size: 14px;
+    background: rgba(255, 255, 255, 0.44);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: #1a1a1a;
+    transition: all 0.22s ease;
+    border-radius: 40px;
+    box-shadow:
+      inset 0  2px 4px rgba(0, 0, 0, 0.04),
+      inset 0  1px 0   rgba(255, 255, 255, 0.7);
+  }
+
+  .email-input::placeholder {
+    color: rgba(0, 0, 0, 0.28);
+    font-style: italic;
+  }
+
+  .email-input:focus {
+    outline: none;
+    background: rgba(255, 255, 255, 0.65);
+    border-color: rgba(255, 255, 255, 0.72);
+    border-bottom-color: rgba(0, 0, 0, 0.16);
+    box-shadow:
+      inset 0 2px 4px rgba(0, 0, 0, 0.04),
+      0 0 0 3px rgba(255, 255, 255, 0.42);
+  }
+
+  .sport-checks {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 12px;
+    padding: 0 6px;
+  }
+
+  .check-label {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 12px;
+    color: rgba(0, 0, 0, 0.45);
+    cursor: pointer;
+    font-weight: 500;
+    letter-spacing: 0.4px;
+    user-select: none;
+  }
+
+  .check-label input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+    accent-color: #1a1a1a;
+    cursor: pointer;
+  }
+
+  .submit-btn {
+    width: 100%;
+    padding: 13px;
+    background: rgba(255, 255, 255, 0.44);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    border: 1px solid rgba(255, 255, 255, 0.62);
+    border-bottom-color: rgba(0, 0, 0, 0.09);
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.22s ease;
+    color: rgba(0, 0, 0, 0.58);
+    border-radius: 40px;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    box-shadow:
+      0 2px 8px rgba(0, 0, 0, 0.05),
+      inset 0 1px 0 rgba(255, 255, 255, 0.82);
+  }
+
+  .submit-btn:hover {
+    background: rgba(255, 255, 255, 0.65);
+    transform: translateY(-1px);
+    box-shadow:
+      0 4px 14px rgba(0, 0, 0, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  }
+
+  .submit-btn:active { transform: translateY(0); }
+
+  .signup-message {
+    font-size: 12px;
+    color: rgba(0, 0, 0, 0.55);
+    margin-top: 12px;
+    display: none;
+    background: rgba(255, 255, 255, 0.5);
+    padding: 10px 18px;
+    border: 1px solid rgba(0, 0, 0, 0.07);
+    border-radius: 30px;
+    text-align: center;
+    line-height: 1.4;
+  }
+
+  .signup-message.error {
+    color: rgba(170, 40, 40, 0.85);
+    background: rgba(255, 210, 210, 0.35);
+    border-color: rgba(200, 100, 100, 0.2);
+  }
+
+  /* ===== Footer ===== */
+  .footer {
+    text-align: center;
+    font-size: 11px;
+    color: rgba(0, 0, 0, 0.3);
+    letter-spacing: 0.5px;
+    padding-bottom: 12px;
+  }
+
+  /* ===== Animations ===== */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(7px); }
+    to   { opacity: 1; transform: translateY(0);   }
+  }
+
+  .fade-up { animation: fadeUp 0.28s ease-out forwards; }
+
+  /* ===== Mobile ===== */
+  @media (max-width: 500px) {
+    body { padding: 24px 14px 40px; }
+    .fact-card { padding: 36px 28px 28px; }
+    .fact-text { font-size: 19px; }
+    .signup-card { padding: 28px 24px 24px; }
+    .header-title { font-size: 28px; }
+  }
+</style>
+{% endblock %}
+
 {% block content %}
-  <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
-    <div class="w-full max-w-md px-6">
-      <!-- Main Card -->
-      <div class="bg-white shadow-2xl rounded-2xl p-8 text-center space-y-6">
-        <h1 class="text-3xl font-bold text-gray-800">Sports Facts</h1>
-        <p class="text-gray-500 text-sm">Your daily dose of MLB & NBA trivia</p>
+<div class="container">
 
-        <!-- Sport Selector (Pills) -->
-        <div class="flex justify-center gap-2">
-          <button id="sport-random" class="sport-btn px-4 py-2 rounded-full bg-gray-800 text-white text-sm font-medium transition-all" onclick="selectSport('random')">
-            Random
-          </button>
-          <button id="sport-mlb" class="sport-btn px-4 py-2 rounded-full bg-gray-200 text-gray-700 text-sm font-medium transition-all hover:bg-gray-300" onclick="selectSport('mlb')">
-            MLB
-          </button>
-          <button id="sport-nba" class="sport-btn px-4 py-2 rounded-full bg-gray-200 text-gray-700 text-sm font-medium transition-all hover:bg-gray-300" onclick="selectSport('nba')">
-            NBA
-          </button>
-        </div>
+  <!-- Header -->
+  <div class="header glass">
+    <div class="header-eyebrow">Glass Notebook</div>
+    <div class="header-title"><strong>Sports</strong> Facts</div>
+    <div class="header-rule"></div>
+  </div>
 
-        <!-- Generate Button -->
-        <button id="generateBtn" class="w-full py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-semibold text-lg shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all active:scale-[0.98]">
-          Generate Fact
-        </button>
-
-        <!-- Fact Display -->
-        <div id="factBox" class="min-h-[120px] rounded-xl bg-gray-50 p-6 text-gray-700 text-base leading-relaxed flex items-center justify-center">
-          <span class="text-gray-400">Click "Generate Fact" to see something amazing!</span>
-        </div>
-
-        <!-- Copy Button -->
-        <button id="copyBtn" class="hidden text-sm text-blue-600 hover:text-blue-800 font-medium" onclick="copyFact()">
-          Copy fact
-        </button>
+  <!-- Fact Card -->
+  <div class="fact-card glass">
+    <div class="fact-card-inner">
+      <div class="fact-sport-tag" id="sportTag">&nbsp;</div>
+      <div class="fact-text muted" id="factText">
+        choose a sport and generate a fact.
       </div>
-
-      <!-- Email Signup Section -->
-      <div class="mt-6 bg-white shadow-lg rounded-2xl p-6">
-        <h2 class="text-lg font-semibold text-gray-800 mb-3">Get facts in your inbox</h2>
-        <form id="signupForm" class="space-y-3">
-          <input id="email" type="email" placeholder="you@example.com"
-                 class="w-full border border-gray-200 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500" required />
-
-          <div class="flex items-center justify-center gap-4 text-sm text-gray-600">
-            <label class="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" value="mlb" class="rounded" checked /> MLB
-            </label>
-            <label class="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" value="nba" class="rounded" checked /> NBA
-            </label>
-          </div>
-
-          <button type="submit" class="w-full py-3 bg-gray-800 text-white rounded-lg font-medium hover:bg-gray-900 transition-colors">
-            Sign Up
-          </button>
-        </form>
-        <p id="signupMessage" class="hidden mt-2 text-sm text-green-600 text-center"></p>
+      <div class="fact-actions">
+        <button class="copy-btn" id="copyBtn" onclick="copyFact()">copy</button>
       </div>
     </div>
   </div>
 
-  <script>
-    let selectedSport = 'random';
-    let currentFact = '';
+  <!-- Sport Selector -->
+  <div class="sports-panel glass">
+    <span class="sports-label">sport</span>
+    <button class="sport-pill active" id="sport-random" onclick="selectSport('random')">all sports</button>
+    <button class="sport-pill" id="sport-mlb"    onclick="selectSport('mlb')">MLB</button>
+    <button class="sport-pill" id="sport-nba"    onclick="selectSport('nba')">NBA</button>
+  </div>
 
-    function selectSport(sport) {
-      selectedSport = sport;
-      
-      // Update button styles
-      document.querySelectorAll('.sport-btn').forEach(btn => {
-        btn.classList.remove('bg-gray-800', 'text-white');
-        btn.classList.add('bg-gray-200', 'text-gray-700');
-      });
-      
-      const activeBtn = document.getElementById('sport-' + sport);
-      activeBtn.classList.remove('bg-gray-200', 'text-gray-700');
-      activeBtn.classList.add('bg-gray-800', 'text-white');
-    }
+  <!-- Generate Button -->
+  <button class="generate-btn" id="generateBtn">
+    ✦ &nbsp; generate fact &nbsp; ✦
+  </button>
 
-    async function generateFact() {
-      const box = document.getElementById('factBox');
-      const copyBtn = document.getElementById('copyBtn');
-      
-      box.innerHTML = '<span class="text-gray-400">Loading...</span>';
-      copyBtn.classList.add('hidden');
-      
-      try {
-        const sportParam = selectedSport === 'random' ? '' : `?sport=${selectedSport}`;
-        const res = await fetch(`/api/generate${sportParam}`);
-        const text = await res.text();
-        let data; try { data = JSON.parse(text); } catch { data = {}; }
+  <!-- Email Signup -->
+  <div class="signup-card glass">
+    <div class="signup-eyebrow">Daily Delivery</div>
+    <div class="signup-heading">One fact, every morning.</div>
+    <div class="signup-sub">No spam. Just glass &amp; paper in your inbox.</div>
 
-        if (!res.ok) throw new Error((data && data.detail) || `HTTP ${res.status}`);
+    <form id="signupForm">
+      <input type="email" class="email-input" id="email"
+             placeholder="your.email@address.com" required />
 
-        currentFact = data.text || "No data returned.";
-        box.textContent = currentFact;
-        copyBtn.classList.remove('hidden');
-        
-        // Analytics tracking
-        if (typeof gtag !== 'undefined') {
-          gtag('event', 'generate_fact', {
-            'sport': data.sport || selectedSport,
-            'llm_used': data.llm
-          });
-        }
-      } catch (err) {
-        box.textContent = "⚠️ " + (err.message || "Could not fetch data right now.");
-        copyBtn.classList.add('hidden');
-        console.error(err);
-      }
-    }
+      <div class="sport-checks">
+        <label class="check-label">
+          <input type="checkbox" value="mlb" checked /> MLB
+        </label>
+        <label class="check-label">
+          <input type="checkbox" value="nba" checked /> NBA
+        </label>
+      </div>
 
-    function copyFact() {
-      if (currentFact) {
-        navigator.clipboard.writeText(currentFact).then(() => {
-          const btn = document.getElementById('copyBtn');
-          btn.textContent = 'Copied!';
-          setTimeout(() => btn.textContent = 'Copy fact', 2000);
+      <button type="submit" class="submit-btn">Subscribe to daily</button>
+    </form>
+
+    <div class="signup-message" id="signupMessage"></div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    one fact per day &nbsp;·&nbsp; glass notebook edition &nbsp;·&nbsp; since 2024
+  </div>
+
+</div>
+
+<script>
+  let selectedSport = 'random';
+  let currentFact   = '';
+
+  function selectSport(sport) {
+    selectedSport = sport;
+    document.querySelectorAll('.sport-pill').forEach(btn => btn.classList.remove('active'));
+    document.getElementById('sport-' + sport).classList.add('active');
+  }
+
+  async function generateFact() {
+    const factText = document.getElementById('factText');
+    const sportTag = document.getElementById('sportTag');
+    const copyBtn  = document.getElementById('copyBtn');
+
+    factText.className = 'fact-text muted';
+    factText.textContent = 'generating…';
+    sportTag.textContent = '';
+    copyBtn.style.display = 'none';
+
+    try {
+      const sportParam = selectedSport === 'random' ? '' : `?sport=${selectedSport}`;
+      const res  = await fetch(`/api/generate${sportParam}`);
+      const text = await res.text();
+      let data;
+      try { data = JSON.parse(text); } catch { data = {}; }
+
+      if (!res.ok) throw new Error((data && data.detail) || `HTTP ${res.status}`);
+
+      currentFact = data.text || 'No data returned.';
+      sportTag.textContent = (data.sport || selectedSport).toUpperCase();
+
+      factText.className = 'fact-text fade-up';
+      factText.textContent = currentFact;
+      copyBtn.style.display = 'inline-block';
+
+      factText.addEventListener('animationend', () => {
+        factText.classList.remove('fade-up');
+      }, { once: true });
+
+      if (typeof gtag !== 'undefined') {
+        gtag('event', 'generate_fact', {
+          sport: data.sport || selectedSport,
+          llm_used: data.llm
         });
       }
+    } catch (err) {
+      factText.className = 'fact-text muted';
+      factText.textContent = '⚠ ' + (err.message || 'Could not fetch data right now.');
+      copyBtn.style.display = 'none';
+      console.error(err);
     }
+  }
 
-    // Signup handler
-    document.getElementById('signupForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      
-      const email = document.getElementById('email').value;
-      const checkboxes = document.querySelectorAll('#signupForm input[type="checkbox"]:checked');
-      const sports = Array.from(checkboxes).map(cb => cb.value);
-      
-      try {
-        const res = await fetch('/api/subscribe', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, sports })
-        });
-        
-        const data = await res.json();
-        const msgEl = document.getElementById('signupMessage');
-        msgEl.textContent = data.message;
-        msgEl.classList.remove('hidden');
-        
-        if (data.ok) {
-          document.getElementById('email').value = '';
-          
-          // Analytics
-          if (typeof gtag !== 'undefined') {
-            gtag('event', 'signup', { 'sports': sports.join(',') });
-          }
-        }
-      } catch (err) {
-        console.error('Signup error:', err);
-      }
+  function copyFact() {
+    if (!currentFact) return;
+    navigator.clipboard.writeText(currentFact).then(() => {
+      const btn = document.getElementById('copyBtn');
+      btn.textContent = 'copied ✓';
+      setTimeout(() => { btn.textContent = 'copy'; }, 2000);
     });
+  }
 
-    document.getElementById('generateBtn').addEventListener('click', generateFact);
-  </script>
+  document.getElementById('generateBtn').addEventListener('click', generateFact);
 
-  <!-- Google Analytics -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=GA_MEASUREMENT_ID"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'GA_MEASUREMENT_ID'); // Replace with your GA ID
-  </script>
+  document.getElementById('signupForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email     = document.getElementById('email').value;
+    const checked   = document.querySelectorAll('#signupForm input[type="checkbox"]:checked');
+    const sports    = Array.from(checked).map(cb => cb.value);
+    const msgEl     = document.getElementById('signupMessage');
+
+    msgEl.style.display = 'none';
+    msgEl.className = 'signup-message';
+
+    try {
+      const res  = await fetch('/api/subscribe', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ email, sports })
+      });
+      const data = await res.json();
+
+      msgEl.textContent   = data.message;
+      msgEl.className     = 'signup-message' + (data.ok ? '' : ' error');
+      msgEl.style.display = 'block';
+
+      if (data.ok) {
+        document.getElementById('email').value = '';
+        if (typeof gtag !== 'undefined') {
+          gtag('event', 'signup', { sports: sports.join(',') });
+        }
+      }
+    } catch (err) {
+      msgEl.textContent   = 'Something went wrong. Please try again.';
+      msgEl.className     = 'signup-message error';
+      msgEl.style.display = 'block';
+      console.error('Signup error:', err);
+    }
+  });
+</script>
+
+<!-- Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=GA_MEASUREMENT_ID"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){ dataLayer.push(arguments); }
+  gtag('js', new Date());
+  gtag('config', 'GA_MEASUREMENT_ID');
+</script>
 {% endblock %}
