@@ -203,6 +203,136 @@ class EmailService:
             print(f"❌ Error sending email to {to_email}: {e}")
             return False
     
+    def create_welcome_html(self, subscriber_email: str, sports: list) -> str:
+        """Create HTML for the welcome/confirmation email."""
+        sport_label = " & ".join(s.upper() for s in sports) if sports else "Sports"
+        html = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Welcome to Sports Facts</title>
+            <style>
+                body {{
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+                    background-color: #ede9e4;
+                    margin: 0; padding: 0;
+                }}
+                .wrap {{
+                    max-width: 560px;
+                    margin: 40px auto;
+                    padding: 20px;
+                }}
+                .card {{
+                    background: rgba(255,255,255,0.82);
+                    border-radius: 20px;
+                    padding: 48px 44px 40px;
+                    border: 1px solid rgba(255,255,255,0.9);
+                    box-shadow: 0 8px 32px rgba(0,0,0,0.07);
+                }}
+                .eyebrow {{
+                    font-size: 10px;
+                    font-weight: 700;
+                    letter-spacing: 2.5px;
+                    text-transform: uppercase;
+                    color: rgba(0,0,0,0.35);
+                    margin-bottom: 10px;
+                }}
+                h1 {{
+                    font-size: 26px;
+                    font-weight: 400;
+                    color: #1a1a1a;
+                    margin: 0 0 6px;
+                }}
+                .rule {{
+                    width: 32px;
+                    height: 1px;
+                    background: rgba(0,0,0,0.15);
+                    margin: 18px 0;
+                }}
+                p {{
+                    font-size: 14px;
+                    line-height: 1.65;
+                    color: rgba(0,0,0,0.55);
+                    margin: 0 0 14px;
+                }}
+                .badge {{
+                    display: inline-block;
+                    font-size: 11px;
+                    font-weight: 600;
+                    letter-spacing: 1.2px;
+                    text-transform: uppercase;
+                    color: rgba(255,255,255,0.9);
+                    background: rgba(14,14,20,0.8);
+                    padding: 6px 16px;
+                    border-radius: 30px;
+                    margin: 4px 4px 4px 0;
+                }}
+                .footer-links {{
+                    margin-top: 36px;
+                    padding-top: 20px;
+                    border-top: 1px solid rgba(0,0,0,0.08);
+                    font-size: 11px;
+                    color: rgba(0,0,0,0.35);
+                    letter-spacing: 0.3px;
+                }}
+                .footer-links a {{
+                    color: rgba(0,0,0,0.45);
+                    text-decoration: none;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="wrap">
+                <div class="card">
+                    <div class="eyebrow">Glass Notebook</div>
+                    <h1><strong>Welcome</strong> to Sports Facts.</h1>
+                    <div class="rule"></div>
+                    <p>
+                        You're subscribed. Starting tomorrow morning you'll receive one
+                        hand-picked fact about <strong>{sport_label}</strong> delivered straight to your inbox.
+                    </p>
+                    <p>Your sport preferences:</p>
+                    {''.join(f'<span class="badge">{s.upper()}</span>' for s in sports)}
+                    <div class="footer-links">
+                        one fact per day &nbsp;·&nbsp; glass notebook edition<br><br>
+                        <a href="https://sportsfactoftheday.up.railway.app/unsubscribe?email={subscriber_email}">unsubscribe</a>
+                        &nbsp;·&nbsp;
+                        <a href="https://sportsfactoftheday.up.railway.app">visit site</a>
+                    </div>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+        return html
+
+    async def send_welcome_email(self, to_email: str, sports: list) -> bool:
+        """Send a confirmation/welcome email to a new subscriber."""
+        if not self.is_configured():
+            print(f"Resend not configured. Would send welcome email to {to_email}")
+            return False
+
+        try:
+            html_content = self.create_welcome_html(to_email, sports)
+            params = {
+                "from": FROM_EMAIL,
+                "to": to_email,
+                "subject": "Welcome to Sports Facts — you're on the list",
+                "html": html_content,
+            }
+            response = resend.Emails.send(params)
+            if response and "id" in response:
+                print(f"✅ Welcome email sent to {to_email} (ID: {response['id']})")
+                return True
+            else:
+                print(f"❌ Failed to send welcome email to {to_email}: {response}")
+                return False
+        except Exception as e:
+            print(f"❌ Error sending welcome email to {to_email}: {e}")
+            return False
+
     async def send_daily_emails(self, sport: str = "random") -> dict:
         """Send daily emails to all subscribers."""
         # Generate fact

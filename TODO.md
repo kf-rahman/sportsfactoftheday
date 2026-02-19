@@ -3,9 +3,9 @@
 ## High Priority
 
 ### 1. Fix Front End Design
-- [ ] Review current UI/UX 
-- [ ] Identify design issues or improvements needed
-- [ ] Implement design fixes
+- [x] Review current UI/UX
+- [x] Implement glassmorphism design (glass notebook aesthetic)
+- [x] Lighten background to cool cream, golf-ball-white cards
 - [ ] Test responsiveness on mobile/desktop
 
 ### 2. Database Hosting & Setup
@@ -16,7 +16,14 @@
 - [ ] Migrate existing data if needed
 - [ ] Document database backup strategy
 
-### 3. Robust Testing & Understanding
+### 3. OpenRouter / LLM Investigation
+- [ ] Confirm OPENROUTER_API_KEY is set in Railway env vars
+- [ ] Confirm OPENROUTER_MODEL is set correctly
+- [ ] Test /api/generate?debug=1 in production to see LLM vs fallback
+- [ ] Check Railway logs for OpenRouter error messages
+- [ ] Verify fallback blurb renders correctly if LLM fails
+
+### 4. Robust Testing & Understanding
 - [ ] Test all API endpoints
   - [ ] GET /api/generate (MLB, NBA, Random)
   - [ ] POST /api/subscribe
@@ -28,19 +35,20 @@
 - [ ] Document how each component works
 - [ ] Check error handling
 
-### 4. Testing Email Sign Up
+### 5. Testing Email Sign Up
 - [ ] Test email subscription form submission
 - [ ] Verify email validation works
+- [x] Add welcome/confirmation email on new signup
 - [ ] Test database persistence (subscribers saved to PostgreSQL)
 - [ ] Test sport preferences (NBA, MLB, both)
-- [ ] Test duplicate email handling
+- [ ] Test duplicate email handling (upserts preferences, no duplicate welcome)
 - [ ] Verify unsubscribe functionality
-- [ ] Test Resend email delivery
+- [ ] Test Resend email delivery (welcome email + daily email)
 - [ ] Test data persists after server restart
 
 ## Medium Priority
 
-### 5. Overall Clean Up
+### 6. Overall Clean Up
 - [ ] Remove any unused code
 - [ ] Clean up imports
 - [ ] Add comments where needed
@@ -51,7 +59,7 @@
 
 ## Status Legend
 - [ ] Not started
-- [~] In progress  
+- [~] In progress
 - [x] Complete
 
-Last updated: 2026-02-10
+Last updated: 2026-02-18

@@ -93,7 +93,7 @@ async def generate_fact(
 
 
 @app.post("/api/subscribe", response_model=SubscribeOut)
-def subscribe(body: SubscribeIn):
+async def subscribe(body: SubscribeIn):
     if not body.sports:
         raise HTTPException(status_code=400, detail="Choose at least one sport (nba, mlb).")
 
@@ -121,7 +121,11 @@ def subscribe(body: SubscribeIn):
             )
             session.add(sub)
             session.commit()
-            return SubscribeOut(ok=True, message="Signed up! Welcome to Sports Facts.")
+
+            # Send welcome/confirmation email to new subscribers
+            await email_service.send_welcome_email(body.email, body.sports)
+
+            return SubscribeOut(ok=True, message="Signed up! Check your inbox for a confirmation.")
 
 
 @app.get("/api/sports")
